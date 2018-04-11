@@ -21,6 +21,7 @@
     [super viewDidLoad];
 //    [self imageView];
     [self editView];
+    self.view.backgroundColor = [UIColor greenColor];
     
 }
 
