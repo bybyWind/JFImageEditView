@@ -7,15 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4D15FFC22079F20300817A32 /* JFResizeView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D15FFC12079F20300817A32 /* JFResizeView.m */; };
+		4D1AF06C207C4C2B0017CA3E /* JFImageMainView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D1AF06B207C4C2B0017CA3E /* JFImageMainView.m */; };
 		4D35DBDD207319AB0099FAF9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D35DBDC207319AB0099FAF9 /* AppDelegate.m */; };
 		4D35DBE0207319AB0099FAF9 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D35DBDF207319AB0099FAF9 /* ViewController.m */; };
 		4D35DBE3207319AB0099FAF9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4D35DBE1207319AB0099FAF9 /* Main.storyboard */; };
 		4D35DBE5207319AB0099FAF9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4D35DBE4207319AB0099FAF9 /* Assets.xcassets */; };
 		4D35DBE8207319AB0099FAF9 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4D35DBE6207319AB0099FAF9 /* LaunchScreen.storyboard */; };
 		4D35DBEB207319AB0099FAF9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D35DBEA207319AB0099FAF9 /* main.m */; };
+		4D35DBF320731CCD0099FAF9 /* JFImageEditorView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D35DBF220731CCD0099FAF9 /* JFImageEditorView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4D15FFC02079F20300817A32 /* JFResizeView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JFResizeView.h; sourceTree = "<group>"; };
+		4D15FFC12079F20300817A32 /* JFResizeView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JFResizeView.m; sourceTree = "<group>"; };
+		4D1AF06A207C4C2B0017CA3E /* JFImageMainView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JFImageMainView.h; sourceTree = "<group>"; };
+		4D1AF06B207C4C2B0017CA3E /* JFImageMainView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JFImageMainView.m; sourceTree = "<group>"; };
 		4D35DBD8207319AB0099FAF9 /* 图片编辑器.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "图片编辑器.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D35DBDB207319AB0099FAF9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		4D35DBDC207319AB0099FAF9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -26,6 +33,8 @@
 		4D35DBE7207319AB0099FAF9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4D35DBE9207319AB0099FAF9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4D35DBEA207319AB0099FAF9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		4D35DBF120731CCD0099FAF9 /* JFImageEditorView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JFImageEditorView.h; sourceTree = "<group>"; };
+		4D35DBF220731CCD0099FAF9 /* JFImageEditorView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JFImageEditorView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +71,12 @@
 				4D35DBDC207319AB0099FAF9 /* AppDelegate.m */,
 				4D35DBDE207319AB0099FAF9 /* ViewController.h */,
 				4D35DBDF207319AB0099FAF9 /* ViewController.m */,
+				4D35DBF120731CCD0099FAF9 /* JFImageEditorView.h */,
+				4D35DBF220731CCD0099FAF9 /* JFImageEditorView.m */,
+				4D1AF06A207C4C2B0017CA3E /* JFImageMainView.h */,
+				4D1AF06B207C4C2B0017CA3E /* JFImageMainView.m */,
+				4D15FFC02079F20300817A32 /* JFResizeView.h */,
+				4D15FFC12079F20300817A32 /* JFResizeView.m */,
 				4D35DBE1207319AB0099FAF9 /* Main.storyboard */,
 				4D35DBE4207319AB0099FAF9 /* Assets.xcassets */,
 				4D35DBE6207319AB0099FAF9 /* LaunchScreen.storyboard */,
@@ -145,6 +160,9 @@
 				4D35DBE0207319AB0099FAF9 /* ViewController.m in Sources */,
 				4D35DBEB207319AB0099FAF9 /* main.m in Sources */,
 				4D35DBDD207319AB0099FAF9 /* AppDelegate.m in Sources */,
+				4D35DBF320731CCD0099FAF9 /* JFImageEditorView.m in Sources */,
+				4D15FFC22079F20300817A32 /* JFResizeView.m in Sources */,
+				4D1AF06C207C4C2B0017CA3E /* JFImageMainView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -281,6 +299,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = P3TX8289AT;
 				INFOPLIST_FILE = "图片编辑器/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.168licai.-----";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -295,6 +314,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = P3TX8289AT;
 				INFOPLIST_FILE = "图片编辑器/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.168licai.-----";
 				PRODUCT_NAME = "$(TARGET_NAME)";
