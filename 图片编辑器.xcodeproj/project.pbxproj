@@ -16,6 +16,8 @@
 		4D35DBE8207319AB0099FAF9 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4D35DBE6207319AB0099FAF9 /* LaunchScreen.storyboard */; };
 		4D35DBEB207319AB0099FAF9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D35DBEA207319AB0099FAF9 /* main.m */; };
 		4D35DBF320731CCD0099FAF9 /* JFImageEditorView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D35DBF220731CCD0099FAF9 /* JFImageEditorView.m */; };
+		4D700437208478CD00ED3CEC /* UIImage+JFExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D700436208478CD00ED3CEC /* UIImage+JFExtension.m */; };
+		4D75967A2085866800EF7ACE /* JFImageEditConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D7596792085866800EF7ACE /* JFImageEditConfig.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +37,10 @@
 		4D35DBEA207319AB0099FAF9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		4D35DBF120731CCD0099FAF9 /* JFImageEditorView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JFImageEditorView.h; sourceTree = "<group>"; };
 		4D35DBF220731CCD0099FAF9 /* JFImageEditorView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JFImageEditorView.m; sourceTree = "<group>"; };
+		4D700435208478CD00ED3CEC /* UIImage+JFExtension.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+JFExtension.h"; sourceTree = "<group>"; };
+		4D700436208478CD00ED3CEC /* UIImage+JFExtension.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIImage+JFExtension.m"; sourceTree = "<group>"; };
+		4D7596782085866800EF7ACE /* JFImageEditConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JFImageEditConfig.h; sourceTree = "<group>"; };
+		4D7596792085866800EF7ACE /* JFImageEditConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JFImageEditConfig.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +83,10 @@
 				4D1AF06B207C4C2B0017CA3E /* JFImageMainView.m */,
 				4D15FFC02079F20300817A32 /* JFResizeView.h */,
 				4D15FFC12079F20300817A32 /* JFResizeView.m */,
+				4D7596782085866800EF7ACE /* JFImageEditConfig.h */,
+				4D7596792085866800EF7ACE /* JFImageEditConfig.m */,
+				4D700435208478CD00ED3CEC /* UIImage+JFExtension.h */,
+				4D700436208478CD00ED3CEC /* UIImage+JFExtension.m */,
 				4D35DBE1207319AB0099FAF9 /* Main.storyboard */,
 				4D35DBE4207319AB0099FAF9 /* Assets.xcassets */,
 				4D35DBE6207319AB0099FAF9 /* LaunchScreen.storyboard */,
@@ -159,8 +169,10 @@
 			files = (
 				4D35DBE0207319AB0099FAF9 /* ViewController.m in Sources */,
 				4D35DBEB207319AB0099FAF9 /* main.m in Sources */,
+				4D700437208478CD00ED3CEC /* UIImage+JFExtension.m in Sources */,
 				4D35DBDD207319AB0099FAF9 /* AppDelegate.m in Sources */,
 				4D35DBF320731CCD0099FAF9 /* JFImageEditorView.m in Sources */,
+				4D75967A2085866800EF7ACE /* JFImageEditConfig.m in Sources */,
 				4D15FFC22079F20300817A32 /* JFResizeView.m in Sources */,
 				4D1AF06C207C4C2B0017CA3E /* JFImageMainView.m in Sources */,
 			);
@@ -299,7 +311,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = P3TX8289AT;
 				INFOPLIST_FILE = "图片编辑器/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.168licai.-----";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -314,7 +326,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = P3TX8289AT;
 				INFOPLIST_FILE = "图片编辑器/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.168licai.-----";
 				PRODUCT_NAME = "$(TARGET_NAME)";

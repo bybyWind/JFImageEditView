@@ -7,10 +7,9 @@
 //
 
 #import "JFResizeView.h"
-#define kANIMATIONDURATION (0.27)
-#define kDOTWH (10.0)
-#define kSCOPEWH (50.0)
-#define kMINRESIZEWH (100.0)
+
+
+
 //左右边距
 #define kSPACE (10)
 /** keypath */
@@ -28,21 +27,13 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
 };
 
 @interface JFResizeView(){
-    NSTimeInterval _animationDuration;
-    CGFloat _dotWH;//八个方向边框顶点圆形的宽高
-    CGFloat _arrLineW;//线条的宽度
-    CGFloat _arrLength;//四个方向边框的线条长度
-    CGFloat _scopeWH;//顶点圆形四周范围宽高
-    CGFloat _minResizeWH;//可以缩小的最小的剪裁区域
-    JFResizerRotationDirection _resizerRotationDirection;//图片当前方向
-    CGSize _imgOrignSize;//记录原始图片大小
-    CGRect _reSizeFrame;//裁剪边框的坐标
-    CGRect _imgFrame;//用来记录图片的frame;
+  
+    CGRect _maxResizeFrame;//剪裁框最大的frame 宽度为self.width-2*kspace
+    CGFloat _imgScale;//用来记录图片放大的倍数
     UIScrollView *_scrollView;
-    UIImageView *_imageView;
-    NSString *_kCAMediaTimingFunction;
+    UIImageView *_editImageView;
     DotPoint _witchDotPoint;//拖拉剪裁框时，存储哪一个点被点击
-    
+    JFImageEditConfig *_editConfig;
     
     
     BOOL _isPanChangeSelectedSucceed;//用来标志此时是否在pan里面change选中了
@@ -73,40 +64,33 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
 @implementation JFResizeView
 
 - (instancetype)initWithFrame:(CGRect)frame
-                  resizeFrame:(CGRect)resizeFrame
-                 imgOrignSize:(CGSize)imgOrignSize
-                    frameType:(JFResizerFrameType)frameType
-                resizeWHScale:(CGFloat)resizeWHScale
+                   editConfig:(JFImageEditConfig *)editConfig
                    scrollView:(UIScrollView *)scrollView
                     imageView:(UIImageView *)imageView{
     if (self = [super initWithFrame:frame]) {
-        
-   
-        _dotWH = kDOTWH;
-        _arrLineW = 2.5;
-        _arrLength = 20.0;
-        _scopeWH = kSCOPEWH;
-        _minResizeWH = kMINRESIZEWH;
-        _resizerRotationDirection = JFResizerRotationDirectionUp;
-        _imgOrignSize = imgOrignSize;
+        _editConfig = editConfig;
+        _maxResizeFrame = CGRectMake(kSPACE, kSPACE, self.bounds.size.width-2*kSPACE, self.bounds.size.height-2*kSPACE);
         _scrollView = scrollView;
-        _imageView = imageView;
-        _reSizeFrame = resizeFrame;
-        _imgFrame =resizeFrame;
-        
-        
-        
-        [self setResizeUIWithFrame:_reSizeFrame];
-  
-        
-        
+        _editImageView = imageView;
+        _imgScale = 1.0;
+        _editConfig.reSizeViewFrame = _editConfig.origionReSizeViewFrame;
+        [self setResizeUIWithFrame: _editConfig.reSizeViewFrame];
+   
         UIPanGestureRecognizer *panGR = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panHandle:)];
         [self addGestureRecognizer:panGR];
-       
     }
     return self;
 }
 
+///**
+// 初始化剪裁框
+//
+// @param resizeFrame <#resizeFrame description#>
+// */
+//-(void)setUpResizeViewWithResizeFrame:(CGRect)resizeFrame{
+//   
+//
+//}
 
 #pragma mark - setUI
 /**
@@ -116,16 +100,14 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
  */
 -(void)setResizeUIWithFrame:(CGRect)resizeFrame{
     
-    self.bgLayer = [self createShapeLayer:0];
+
     UIBezierPath *bgPath = [UIBezierPath bezierPathWithRect:self.bounds];
     [bgPath appendPath:[UIBezierPath bezierPathWithRect:resizeFrame]];
     self.bgLayer.path = bgPath.CGPath;
-    self.bgLayer.fillRule = kCAFillRuleEvenOdd;
-    self.bgLayer.fillColor = [UIColor colorWithRed:192/255 green:192/255 blue:192/255 alpha:0.5].CGColor;
-    self.frameLayer = [self createShapeLayer:1];
+
     self.frameLayer.strokeColor = [UIColor whiteColor].CGColor;
     self.frameLayer.fillColor = [UIColor clearColor].CGColor;
-    self.frameLayer.path = [UIBezierPath bezierPathWithRect:_reSizeFrame].CGPath;
+    self.frameLayer.path = [UIBezierPath bezierPathWithRect:_editConfig.reSizeViewFrame].CGPath;
     
     [self updateDotLayerPath];
     
@@ -152,10 +134,11 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
  @return <#return value description#>
  */
 - (UIBezierPath *)dotPathWithPosition:(CGPoint)position {
-    CGFloat dotWH = _dotWH;
+    CGFloat dotWH = _editConfig.dotWH;
     UIBezierPath *dotPath = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(position.x - dotWH * 0.5, position.y - dotWH * 0.5, dotWH, dotWH)];
     return dotPath;
 }
+
 /**
  初始化创建dot
  
@@ -164,19 +147,21 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
     layer.path =  [self dotPathWithPosition:point].CGPath;
 }
 
+
+
 /**
  更新背景bgPath
  */
 -(void)updateBgPath{
     UIBezierPath *bgPath = [UIBezierPath bezierPathWithRect:self.bounds];
-    [bgPath appendPath:[UIBezierPath bezierPathWithRect:_reSizeFrame]];
+    [bgPath appendPath:[UIBezierPath bezierPathWithRect:_editConfig.reSizeViewFrame]];
     self.bgLayer.path = bgPath.CGPath;
 }
 /**
  更新背景FrameLayerPath
  */
 -(void)updateFrameLayerPath{
-     self.frameLayer.path = [UIBezierPath bezierPathWithRect:_reSizeFrame].CGPath;
+     self.frameLayer.path = [UIBezierPath bezierPathWithRect:_editConfig.reSizeViewFrame].CGPath;
 }
 
 /**
@@ -193,6 +178,10 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
     [self createDotLayer:self.bottomMidDot dotWithDotPoint:CGPointMake(self.resizeFrameMidX, self.resizeFrameMaxY)];
 }
 
+
+/**
+    panChange时候的更新
+ */
 -(void)updatebgLayerAndFrameLayerAndDotLayer{
     [CATransaction begin];
     [self updateBgPath];
@@ -201,30 +190,128 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
     [CATransaction commit];
 }
 
+/**
+ pan结束后，再调整resizeView为居中形式
+ */
+-(void)adjustResizeFrame{
+    
+    CGFloat scalewh = _maxResizeFrame.size.width/self.resizeFrameW;
+    _imgScale = _scrollView.zoomScale*scalewh;
+    CGFloat w = _maxResizeFrame.size.width;
+    CGFloat h  = self.resizeFrameH*scalewh;
+    
+    if (h>_maxResizeFrame.size.height) {
+        h = _maxResizeFrame.size.height;
+        scalewh = h/self.resizeFrameH;
+        w = scalewh*self.resizeFrameW;
+ 
+    }
+      _editConfig.reSizeViewFrame = CGRectMake((self.bounds.size.width-w)/2, (self.bounds.size.height-h)/2, w, h);
+    
+    
+    
+    //计算scrollView放大的倍数
+    if (w>_scrollView.frame.size.width||h>_scrollView.frame.size.height) {
+        CGFloat scaleW = 1.0;
+          CGFloat scaleH = 1.0;
+        if (w>_scrollView.frame.size.width) {
+            scaleW = w/_scrollView.frame.size.width;
+        }
+        if (h>_scrollView.frame.size.height) {
+            scaleH = h/_scrollView.frame.size.height;
+        }
+        scalewh = scaleW>scaleH?scaleW:scaleH;
+    }
+    
+     _imgScale = _scrollView.zoomScale*scalewh;
+
+
+}
+/**
+ pan结束后，调整scrollView大小
+ */
+-(void)adjustMainView{
+    [UIView animateWithDuration:_editConfig.animationDuration animations:^{
+        _scrollView.frame = _editConfig.reSizeViewFrame;
+    }];
+    
+}
+/**
+ 动画调整resizeView视图
+ */
+-(void)adjustResizeView{
+    
+    void (^layerPathAnimate)(CAShapeLayer *layer, UIBezierPath *newPath) = ^(CAShapeLayer *layer, UIBezierPath *path) {
+        CABasicAnimation *anim = [CABasicAnimation animationWithKeyPath:aKeyPath(layer, path)];
+        anim.fillMode = kCAFillModeBackwards;
+        anim.fromValue = [UIBezierPath bezierPathWithCGPath:layer.path];
+        anim.toValue = path;
+        anim.duration = _editConfig.animationDuration;
+        anim.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+        [layer addAnimation:anim forKey:@"path"];
+    };
+    UIBezierPath *leftTopPath =  [self dotPathWithPosition:CGPointMake(self.resizeFrameX, self.resizeFrameY)];
+     UIBezierPath *rightTopPath =  [self dotPathWithPosition:CGPointMake(self.resizeFrameMaxX, self.resizeFrameY)];
+    
+    UIBezierPath *leftBottomPath =  [self dotPathWithPosition:CGPointMake(self.resizeFrameX, self.resizeFrameMaxY)];
+    UIBezierPath *rightBottomPath =  [self dotPathWithPosition:CGPointMake(self.resizeFrameMaxX, self.resizeFrameMaxY)];
+    
+    UIBezierPath *leftMidPath =  [self dotPathWithPosition:CGPointMake(self.resizeFrameX, self.resizeFrameMidY)];
+    UIBezierPath *rightMidPath =  [self dotPathWithPosition:CGPointMake(self.resizeFrameMaxX, self.resizeFrameMidY)];
+    UIBezierPath *topMidPath =  [self dotPathWithPosition:CGPointMake(self.resizeFrameMidX, self.resizeFrameY)];
+    UIBezierPath *bottomMidPath =  [self dotPathWithPosition:CGPointMake(self.resizeFrameMidX, self.resizeFrameMaxY)];
+    
+    UIBezierPath *bgPath = [UIBezierPath bezierPathWithRect:self.bounds];
+    [bgPath appendPath:[UIBezierPath bezierPathWithRect:_editConfig.reSizeViewFrame]];
+    UIBezierPath *framePath = [UIBezierPath bezierPathWithRect:_editConfig.reSizeViewFrame];
+    layerPathAnimate(self.leftTopDot,leftTopPath);
+    layerPathAnimate(self.rightTopDot,rightTopPath);
+    layerPathAnimate(self.leftBottomDot,leftBottomPath);
+    layerPathAnimate(self.rightBottomDot,rightBottomPath);
+    layerPathAnimate(self.leftMidDot,leftMidPath);
+    layerPathAnimate(self.rightMidDot,rightMidPath);
+    layerPathAnimate(self.topMidDot,topMidPath);
+    layerPathAnimate(self.bottomMidDot,bottomMidPath);
+    layerPathAnimate(self.bgLayer, bgPath);
+    layerPathAnimate(self.frameLayer, framePath);
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    self.leftTopDot.path = leftTopPath.CGPath;
+    self.rightTopDot.path = rightTopPath.CGPath;
+    self.leftBottomDot.path = leftBottomPath.CGPath;
+    self.rightBottomDot.path = rightBottomPath.CGPath;
+  
+        self.leftMidDot.path = leftMidPath.CGPath;
+        self.rightMidDot.path = rightMidPath.CGPath;
+        self.topMidDot.path = topMidPath.CGPath;
+        self.bottomMidDot.path = bottomMidPath.CGPath;
+ 
+   
+    _bgLayer.path = bgPath.CGPath;
+    _frameLayer.path = framePath.CGPath;
+    [CATransaction commit];
+}
+
+
 
 #pragma mark - UIPanGestureRecognizer
 
 - (void)panHandle:(UIPanGestureRecognizer *)panGR {
     
     
-    
     CGPoint point =  [panGR locationInView:self];
-  
-    if (point.x<kSPACE) return;
-    if (point.y<kSPACE) return;
-    if (point.x>self.bounds.size.width-kSPACE) {
+    //用来判断 当point超出pan的范围的时候，就自动adjustFrameView
+    if ((point.x<kSPACE)||(point.y<kSPACE)||(point.x>self.bounds.size.width-kSPACE)||(point.y>(self.bounds.size.height-kSPACE))){
+        if (_isPanChangeSelectedSucceed == YES) {
+            [self panEnd];
+        }
         return;
     }
-    if (point.y>(self.bounds.size.height-kSPACE)) {
-        return;
-    }
-    
 
-    
     
     switch (panGR.state) {
         case UIGestureRecognizerStateBegan:{
-              NSLog(@"start");
+          
             if ([self judegPointInDotScopeWithPoint:point]) {
                 _isPanChangeSelectedSucceed = YES;
             }else{
@@ -242,10 +329,10 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
                 switch (_witchDotPoint) {
                     case LeftTop:{
                         
-                        if ((point.x+kMINRESIZEWH)>self.resizeFrameMaxX) {
+                        if ((point.x+_editConfig.minResizeWH)>self.resizeFrameMaxX) {
                             return;
                         }
-                        if ((point.y+kMINRESIZEWH)>self.resizeFrameMaxY) {
+                        if ((point.y+_editConfig.minResizeWH)>self.resizeFrameMaxY) {
                             return;
                         }
                         
@@ -257,7 +344,7 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
                     }
                         break;
                     case LeftMid:{
-                        if ((point.x+kMINRESIZEWH)>self.resizeFrameMaxX) {
+                        if ((point.x+_editConfig.minResizeWH)>self.resizeFrameMaxX) {
                             return;
                         }
                         x = point.x;
@@ -265,10 +352,10 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
                     }
                         break;
                     case LeftBottom:{
-                        if ((point.x+kMINRESIZEWH)>self.resizeFrameMaxX) {
+                        if ((point.x+_editConfig.minResizeWH)>self.resizeFrameMaxX) {
                             return;
                         }
-                        if ((point.y-kMINRESIZEWH)<self.resizeFrameY) {
+                        if ((point.y-_editConfig.minResizeWH)<self.resizeFrameY) {
                             return;
                         }
                         x = point.x;
@@ -278,10 +365,10 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
                         break;
                     case RightTop:{
                         
-                        if ((point.x-kMINRESIZEWH)<self.resizeFrameX) {
+                        if ((point.x-_editConfig.minResizeWH)<self.resizeFrameX) {
                             return;
                         }
-                        if ((point.y+kMINRESIZEWH)>self.resizeFrameMaxY) {
+                        if ((point.y+_editConfig.minResizeWH)>self.resizeFrameMaxY) {
                             return;
                         }
                         
@@ -292,7 +379,7 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
                     }
                         break;
                     case RightMid:{
-                        if ((point.x-kMINRESIZEWH)<self.resizeFrameX) {
+                        if ((point.x-_editConfig.minResizeWH)<self.resizeFrameX) {
                             return;
                         }
                        
@@ -300,10 +387,10 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
                     }
                         break;
                     case RightBottom:{
-                        if ((point.x-kMINRESIZEWH)<self.resizeFrameX) {
+                        if ((point.x-_editConfig.minResizeWH)<self.resizeFrameX) {
                             return;
                         }
-                        if ((point.y-kMINRESIZEWH)<self.resizeFrameY) {
+                        if ((point.y-_editConfig.minResizeWH)<self.resizeFrameY) {
                             return;
                         }
                     
@@ -313,7 +400,7 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
                         break;
                     case TopMid:{
                        
-                        if ((point.y+kMINRESIZEWH)>self.resizeFrameMaxY) {
+                        if ((point.y+_editConfig.minResizeWH)>self.resizeFrameMaxY) {
                             return;
                         }
                         y = point.y;
@@ -322,7 +409,7 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
                         break;
                     case BottomMid:{
                         
-                        if ((point.y-kMINRESIZEWH)<self.resizeFrameY) {
+                        if ((point.y-_editConfig.minResizeWH)<self.resizeFrameY) {
                             return;
                         }
                      
@@ -333,7 +420,7 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
                         break;
                         
                 }
-                _reSizeFrame = CGRectMake(x, y, w, h);
+                _editConfig.reSizeViewFrame = CGRectMake(x, y, w, h);
                 [self updatebgLayerAndFrameLayerAndDotLayer];
             }
             
@@ -341,22 +428,60 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
             
             
             break;
-        case UIGestureRecognizerStateEnded:{
-            
-              _isPanChangeSelectedSucceed = NO;
-        }
-            
+        case UIGestureRecognizerStateEnded:
+             case UIGestureRecognizerStateCancelled:
+                case UIGestureRecognizerStateFailed:
+       
+            [self panEnd];
+    
             break;
+     
+
         default:
             break;
     }
     
-    
+
     
 }
 
+-(void)panEnd{
+    
+    [self adjustResizeFrame];
+    [self adjustResizeView];
+    [self adjusetImageSize];
+    [self adjustMainView];
+ 
+  
+    _isPanChangeSelectedSucceed = NO;
+}
 
-
+-(void)adjusetImageSize{
+    
+    [UIView animateWithDuration:_editConfig.animationDuration animations:^{
+          _scrollView.zoomScale = _imgScale;
+    }];
+  
+    
+}
+#pragma mark - public
+-(void)resizeViewReset{
+    
+    _editConfig.reSizeViewFrame = _editConfig.origionReSizeViewFrame;
+     _imgScale = 1.0;
+    
+    [self updateBgPath];
+    [self updateFrameLayerPath];
+    [self updateDotLayerPath];
+    
+    [UIView animateWithDuration:_editConfig.animationDuration animations:^{
+        _scrollView.frame = _editConfig.origionReSizeViewFrame;
+        _scrollView.contentSize = _editConfig.origionReSizeViewFrame.size;
+        _scrollView.minimumZoomScale = 1.0;
+        _scrollView.zoomScale = _imgScale;
+    }];
+    
+}
 
 #pragma mark - private
 /**
@@ -367,28 +492,28 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
  */
 -(BOOL)judegPointInDotScopeWithPoint:(CGPoint)point{
     
-    if (CGRectContainsPoint(CGRectMake(self.resizeFrameX-_scopeWH/2, self.resizeFrameY-_scopeWH/2, _scopeWH, _scopeWH), point)) {
+    if (CGRectContainsPoint(CGRectMake(self.resizeFrameX-_editConfig.dotScopeWH/2, self.resizeFrameY-_editConfig.dotScopeWH/2, _editConfig.dotScopeWH, _editConfig.dotScopeWH), point)) {
         _witchDotPoint = LeftTop;
         return YES;
-    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameX-_scopeWH/2, self.resizeFrameMidY-_scopeWH/2, _scopeWH, _scopeWH), point)){
+    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameX-_editConfig.dotScopeWH/2, self.resizeFrameMidY-_editConfig.dotScopeWH/2, _editConfig.dotScopeWH, _editConfig.dotScopeWH), point)){
         _witchDotPoint = LeftMid;
         return YES;
-    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameX-_scopeWH/2, self.resizeFrameMaxY-_scopeWH/2, _scopeWH, _scopeWH), point)){
+    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameX-_editConfig.dotScopeWH/2, self.resizeFrameMaxY-_editConfig.dotScopeWH/2, _editConfig.dotScopeWH, _editConfig.dotScopeWH), point)){
         _witchDotPoint = LeftBottom;
         return YES;
-    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMaxX-_scopeWH/2, self.resizeFrameY-_scopeWH/2, _scopeWH, _scopeWH), point)){
+    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMaxX-_editConfig.dotScopeWH/2, self.resizeFrameY-_editConfig.dotScopeWH/2, _editConfig.dotScopeWH, _editConfig.dotScopeWH), point)){
         _witchDotPoint = RightTop;
         return YES;
-    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMaxX-_scopeWH/2, self.resizeFrameMidY-_scopeWH/2, _scopeWH, _scopeWH), point)){
+    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMaxX-_editConfig.dotScopeWH/2, self.resizeFrameMidY-_editConfig.dotScopeWH/2, _editConfig.dotScopeWH, _editConfig.dotScopeWH), point)){
         _witchDotPoint = RightMid;
         return YES;
-    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMaxX-_scopeWH/2, self.resizeFrameMaxY-_scopeWH/2, _scopeWH, _scopeWH), point)){
+    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMaxX-_editConfig.dotScopeWH/2, self.resizeFrameMaxY-_editConfig.dotScopeWH/2, _editConfig.dotScopeWH, _editConfig.dotScopeWH), point)){
         _witchDotPoint = RightBottom;
         return YES;
-    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMidX-_scopeWH/2, self.resizeFrameY-_scopeWH/2, _scopeWH, _scopeWH), point)){
+    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMidX-_editConfig.dotScopeWH/2, self.resizeFrameY-_editConfig.dotScopeWH/2, _editConfig.dotScopeWH, _editConfig.dotScopeWH), point)){
         _witchDotPoint = TopMid;
         return YES;
-    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMidX-_scopeWH/2, self.resizeFrameMaxY-_scopeWH/2, _scopeWH, _scopeWH), point)){
+    }else if (CGRectContainsPoint(CGRectMake(self.resizeFrameMidX-_editConfig.dotScopeWH/2, self.resizeFrameMaxY-_editConfig.dotScopeWH/2, _editConfig.dotScopeWH, _editConfig.dotScopeWH), point)){
         _witchDotPoint = BottomMid;
         return YES;
     }else{
@@ -397,13 +522,17 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
     }
 }
 
+-(void)dealloc{
+    NSLog(@"dealloc");
+}
+
 #pragma mark - event
 -(UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event{
-    NSLog(@"hit");
-    CGFloat x = self.resizeFrameX+_scopeWH/2;
-    CGFloat y = self.resizeFrameY + _scopeWH/2;
-    CGFloat w = self.resizeFrameW-_scopeWH;
-    CGFloat h = self.resizeFrameH-_scopeWH;
+    
+    CGFloat x = self.resizeFrameX+_editConfig.dotScopeWH/2;
+    CGFloat y = self.resizeFrameY + _editConfig.dotScopeWH/2;
+    CGFloat w = self.resizeFrameW-_editConfig.dotScopeWH;
+    CGFloat h = self.resizeFrameH-_editConfig.dotScopeWH;
     CGRect rect =  CGRectMake(x, y, w, h);
     if (CGRectContainsPoint(rect, point)) {
         self.userInteractionEnabled = NO;
@@ -414,6 +543,21 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
 }
 
 #pragma mark - getter
+- (CAShapeLayer *)frameLayer {
+    if (!_frameLayer){
+        _frameLayer = [self createShapeLayer:1];
+    }
+    return _frameLayer;
+}
+
+- (CAShapeLayer *)bgLayer {
+    if (!_bgLayer){
+        _bgLayer = [self createShapeLayer:0];
+       _bgLayer.fillRule = kCAFillRuleEvenOdd;
+      _bgLayer.fillColor = [UIColor colorWithRed:192/255 green:192/255 blue:192/255 alpha:0.5].CGColor;
+    }
+    return _bgLayer;
+}
 - (CAShapeLayer *)leftTopDot {
     if (!_leftTopDot){
         _leftTopDot = [self createShapeLayer:0];
@@ -482,113 +626,28 @@ typedef NS_ENUM(NSUInteger, DotPoint) {
 
 
 - (CGFloat)resizeFrameX {
-    return _reSizeFrame.origin.x;
+    return _editConfig.reSizeViewFrame.origin.x;
 }
 - (CGFloat)resizeFrameY {
-    return _reSizeFrame.origin.y;
+    return _editConfig.reSizeViewFrame.origin.y;
 }
 - (CGFloat)resizeFrameW {
-    return _reSizeFrame.size.width;
+    return _editConfig.reSizeViewFrame.size.width;
 }
 - (CGFloat)resizeFrameH {
-    return _reSizeFrame.size.height;
+    return _editConfig.reSizeViewFrame.size.height;
 }
 -(CGFloat)resizeFrameMaxX{
-    return CGRectGetMaxX(_reSizeFrame);
+    return CGRectGetMaxX(_editConfig.reSizeViewFrame);
 }
 -(CGFloat)resizeFrameMidX{
-    return CGRectGetMidX(_reSizeFrame);
+    return CGRectGetMidX(_editConfig.reSizeViewFrame);
 }
 -(CGFloat)resizeFrameMaxY{
-    return CGRectGetMaxY(_reSizeFrame);
+    return CGRectGetMaxY(_editConfig.reSizeViewFrame);
 }
 -(CGFloat)resizeFrameMidY{
-    return CGRectGetMidY(_reSizeFrame);
-}
--(void)updateUIBezierPathWithresizeFrame:(CGRect)resizeFrame{
-    
-    CGRect imageresizerFrame = _imageView.frame;
-    
-    CGFloat imageresizerX = imageresizerFrame.origin.x;
-    CGFloat imageresizerY = imageresizerFrame.origin.y;
-    CGFloat imageresizerMidX = CGRectGetMidX(imageresizerFrame);
-    CGFloat imageresizerMidY = CGRectGetMidY(imageresizerFrame);
-    CGFloat imageresizerMaxX = CGRectGetMaxX(imageresizerFrame);
-    CGFloat imageresizerMaxY = CGRectGetMaxY(imageresizerFrame);
-    
-    UIBezierPath *leftTopDotPath;
-    UIBezierPath *leftBottomDotPath;
-    UIBezierPath *rightTopDotPath;
-    UIBezierPath *rightBottomDotPath;
-    
-    UIBezierPath *leftMidDotPath;
-    UIBezierPath *rightMidDotPath;
-    UIBezierPath *topMidDotPath;
-    UIBezierPath *bottomMidDotPath;
-    
-    UIBezierPath *horTopLinePath;
-    UIBezierPath *horBottomLinePath;
-    UIBezierPath *verLeftLinePath;
-    UIBezierPath *verRightLinePath;
-    
-    
-    leftTopDotPath = [self dotPathWithPosition:CGPointMake(imageresizerX, imageresizerY)];
-    leftBottomDotPath = [self dotPathWithPosition:CGPointMake(imageresizerX, imageresizerMaxY)];
-    rightTopDotPath = [self dotPathWithPosition:CGPointMake(imageresizerMaxX, imageresizerY)];
-    rightBottomDotPath = [self dotPathWithPosition:CGPointMake(imageresizerMaxX, imageresizerMaxY)];
-    
-    
-    leftMidDotPath = [self dotPathWithPosition:CGPointMake(imageresizerX, imageresizerMidY)];
-    rightMidDotPath = [self dotPathWithPosition:CGPointMake(imageresizerMaxX, imageresizerMidY)];
-    topMidDotPath = [self dotPathWithPosition:CGPointMake(imageresizerMidX, imageresizerY)];
-    bottomMidDotPath = [self dotPathWithPosition:CGPointMake(imageresizerMidX, imageresizerMaxY)];
-    
-    
-    
-    
-    UIBezierPath *bgPath;
-    UIBezierPath *framePath = [UIBezierPath bezierPathWithRect:resizeFrame];
-    bgPath = [UIBezierPath bezierPathWithRect:self.bgLayer.frame];
-    [bgPath appendPath:framePath];
-    
-    
-    void (^layerPathAnimate)(CAShapeLayer *layer, UIBezierPath *path) = ^(CAShapeLayer *layer, UIBezierPath *path) {
-        CABasicAnimation *anim = [CABasicAnimation animationWithKeyPath:aKeyPath(layer, path)];
-        anim.fillMode = kCAFillModeBackwards;
-        anim.fromValue = [UIBezierPath bezierPathWithCGPath:layer.path];
-        anim.toValue = path;
-        anim.duration = _animationDuration;
-        anim.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-        [layer addAnimation:anim forKey:@"path"];
-    };
-    
-    layerPathAnimate(self.leftTopDot, leftTopDotPath);
-    layerPathAnimate(self.leftBottomDot, leftBottomDotPath);
-    layerPathAnimate(self.rightTopDot, rightTopDotPath);
-    layerPathAnimate(self.rightBottomDot, rightBottomDotPath);
-    layerPathAnimate(self.leftMidDot, leftMidDotPath);
-    layerPathAnimate(self.rightMidDot, rightMidDotPath);
-    layerPathAnimate(self.topMidDot, topMidDotPath);
-    layerPathAnimate(self.bottomMidDot, bottomMidDotPath);
-    layerPathAnimate(self.bgLayer, bgPath);
-    layerPathAnimate(self.frameLayer, framePath);
-    [CATransaction begin];
-    [CATransaction setDisableActions:YES];
-    _leftTopDot.path = leftTopDotPath.CGPath;
-    _leftBottomDot.path = leftBottomDotPath.CGPath;
-    _rightTopDot.path = rightTopDotPath.CGPath;
-    _rightBottomDot.path = rightBottomDotPath.CGPath;
-    
-    _leftMidDot.path = leftMidDotPath.CGPath;
-    _rightMidDot.path = rightMidDotPath.CGPath;
-    _topMidDot.path = topMidDotPath.CGPath;
-    _bottomMidDot.path = bottomMidDotPath.CGPath;
-    
-    
-    
-    _bgLayer.path = bgPath.CGPath;
-    _frameLayer.path = framePath.CGPath;
-    [CATransaction commit];
+    return CGRectGetMidY(_editConfig.reSizeViewFrame);
 }
 
 

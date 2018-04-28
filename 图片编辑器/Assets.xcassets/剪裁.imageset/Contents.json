@@ -2,11 +2,11 @@
   "images" : [
     {
       "idiom" : "universal",
-      "filename" : "蒙娜丽莎.png",
       "scale" : "1x"
     },
     {
       "idiom" : "universal",
+      "filename" : "剪裁@2x.png",
       "scale" : "2x"
     },
     {
